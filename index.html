@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Name – Full-Stack Developer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3fb;--ink:#14213d;--muted:#51607f;--accent:#2f4bff;--card:#fff;--line:#cfd9ee}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1830;--ink:#eaf0ff;--muted:#9fb0d6;--accent:#7f95ff;--card:#17223f;--line:#2a3860}}
+*{box-sizing:border-box;margin:0}
+body{font-family:'Bricolage Grotesque',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 6vw;max-width:1100px;margin:auto}
+nav b{font-weight:800;font-size:1.1rem}
+nav a{margin-left:20px;text-decoration:none;color:var(--muted)}
+nav a:hover{color:var(--accent)}
+section{max-width:1100px;margin:auto;padding:56px 6vw}
+h1{font-size:clamp(2.6rem,9vw,6.5rem);line-height:.98;font-weight:800;letter-spacing:-.03em;max-width:11ch}
+.lead{font-size:1.2rem;color:var(--muted);max-width:52ch;margin:24px 0}
+.btn{display:inline-block;background:var(--accent);color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700;border:0;font:inherit;font-weight:700;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:2px solid var(--line);margin-left:8px}
+h2{font-size:2rem;margin-bottom:24px;letter-spacing:-.02em}
+.skills{display:flex;flex-wrap:wrap;gap:10px}
+.skills span,.tags span{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:.9rem;background:var(--card)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.card p{color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:.8rem;padding:2px 10px}
+.links a{margin-right:16px;color:var(--accent);font-weight:700}
+form{display:grid;gap:14px;max-width:520px}
+input,textarea{font:inherit;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+#status{min-height:1.5em;color:var(--muted)}
+footer{text-align:center;padding:40px;color:var(--muted)}
+</style>
+</head>
+<body>
+<nav><b>Your Name</b><div><a href="#about">About</a><a href="#projects">Projects</a><a href="#contact">Contact</a></div></nav>
+
+<section>
+  <h1>I build web apps end to end.</h1>
+  <p class="lead">Hi, I'm Your Name, a full-stack developer who designs the interface, writes the API and manages the database. Below are projects I've shipped.</p>
+  <a class="btn" href="#projects">See my projects</a><a class="btn alt" href="#contact">Get in touch</a>
+</section>
+
+<section id="about">
+  <h2>About me</h2>
+  <p class="lead" style="margin-top:0">I'm a student passionate about turning ideas into working products. I enjoy solving problems, learning new tools and building things people can use. Replace this text with your own story.</p>
+  <div class="skills"><span>HTML</span><span>CSS</span><span>JavaScript</span><span>React</span><span>Node.js</span><span>Express</span><span>MongoDB</span><span>Git</span></div>
+</section>
+
+<section id="projects">
+  <h2>Projects</h2>
+  <div class="grid" id="projectGrid"><p>Loading projects…</p></div>
+</section>
+
+<section id="contact">
+  <h2>Contact me</h2>
+  <form id="contactForm">
+    <input name="name" placeholder="Your name" required autocomplete="name">
+    <input name="email" type="email" placeholder="Your email" required autocomplete="email">
+    <textarea name="message" rows="5" placeholder="Your message" required></textarea>
+    <button class="btn" type="submit">Send message</button>
+    <p id="status" role="status"></p>
+  </form>
+</section>
+
+<footer>© <span id="yr"></span> Your Name</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+fetch('/api/projects').then(r => r.json()).then(list => {
+  const grid = document.getElementById('projectGrid');
+  if (!list.length) { grid.innerHTML = '<p>No projects yet. Add one with POST /api/projects.</p>'; return; }
+  grid.innerHTML = list.map(p => `
+    <article class="card">
+      <h3>${esc(p.title)}</h3><p>${esc(p.description)}</p>
+      <div class="tags">${(p.tech||[]).map(t => `<span>${esc(t)}</span>`).join('')}</div>
+      <div class="links"><a href="${esc(p.link)}">Live demo</a><a href="${esc(p.repo)}">Source code</a></div>
+    </article>`).join('');
+}).catch(() => { document.getElementById('projectGrid').innerHTML = '<p>Could not load projects. Check that the server is running.</p>'; });
+
+document.getElementById('contactForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const st = document.getElementById('status');
+  try {
+    const res = await fetch('/api/contact', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.fromEntries(new FormData(e.target)))});
+    if (!res.ok) throw 0;
+    st.textContent = 'Message sent. Thank you!'; e.target.reset();
+  } catch { st.textContent = 'Could not send. Please try again.'; }
+});
+</script>
+</body>
+</html>
